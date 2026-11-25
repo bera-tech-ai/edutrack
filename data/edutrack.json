@@ -1,0 +1,182 @@
+{
+  "users": [
+    {
+      "id": "u-admin",
+      "role": "admin",
+      "name": "Mary Wanjiku",
+      "email": "admin@edutrack.ke",
+      "password": "6b59e3ba6fe93984576fa9512ba3d802:f5192f61c0ec6edc676ac618cd339f2f35153dfee7abc0cbdc9a1a007a14feda"
+    },
+    {
+      "id": "u-teacher",
+      "role": "teacher",
+      "name": "David Otieno",
+      "email": "teacher@edutrack.ke",
+      "password": "9b1679ae617c86c3e8b21b8047d81326:9266236e41668f85db3d91df0b3f2d2d980ed4a3424feb6885cc468aa7a63b9b",
+      "className": "Grade 7 East"
+    },
+    {
+      "id": "u-student",
+      "role": "student",
+      "name": "Amina Hassan",
+      "email": "student@edutrack.ke",
+      "password": "f5b0317965ae14947855654f89ce2b68:26cd20bf113869688ef9a27abaf43585d649d0f842d2eac955c0b38275ff6061",
+      "studentId": "STU-001"
+    },
+    {
+      "id": "u-parent",
+      "role": "parent",
+      "name": "Peter Hassan",
+      "email": "parent@edutrack.ke",
+      "password": "ed7f3f6f86516fa271ef219ad366c7d8:ddd33ad17f16e2ea0e54df900637da49fc6b9a17cfa5d419685bf2a169fdf49c",
+      "childId": "STU-001"
+    }
+  ],
+  "students": [
+    {
+      "id": "STU-001",
+      "name": "Amina Hassan",
+      "className": "Grade 7 East",
+      "guardian": "Peter Hassan"
+    },
+    {
+      "id": "STU-002",
+      "name": "Brian Kiprop",
+      "className": "Grade 7 East",
+      "guardian": "Faith Kiprop"
+    },
+    {
+      "id": "STU-003",
+      "name": "Cynthia Njeri",
+      "className": "Grade 7 East",
+      "guardian": "John Njeri"
+    },
+    {
+      "id": "STU-004",
+      "name": "Daniel Mwangi",
+      "className": "Grade 8 West",
+      "guardian": "Grace Mwangi"
+    },
+    {
+      "id": "STU-005",
+      "name": "Esther Achieng",
+      "className": "Grade 8 West",
+      "guardian": "Paul Achieng"
+    }
+  ],
+  "teachers": [
+    {
+      "id": "TCH-001",
+      "name": "David Otieno",
+      "subject": "Mathematics",
+      "className": "Grade 7 East"
+    },
+    {
+      "id": "TCH-002",
+      "name": "Sarah Kimani",
+      "subject": "English",
+      "className": "Grade 8 West"
+    }
+  ],
+  "classes": [
+    {
+      "name": "Grade 7 East",
+      "teacher": "David Otieno",
+      "students": 3
+    },
+    {
+      "name": "Grade 8 West",
+      "teacher": "Sarah Kimani",
+      "students": 2
+    }
+  ],
+  "attendance": [
+    {
+      "studentId": "STU-001",
+      "date": "2026-11-24",
+      "status": "present"
+    },
+    {
+      "studentId": "STU-001",
+      "date": "2026-11-25",
+      "status": "present"
+    },
+    {
+      "studentId": "STU-002",
+      "date": "2026-11-25",
+      "status": "absent"
+    }
+  ],
+  "results": [
+    {
+      "studentId": "STU-001",
+      "subject": "Mathematics",
+      "score": 86,
+      "term": "Term 3"
+    },
+    {
+      "studentId": "STU-001",
+      "subject": "English",
+      "score": 78,
+      "term": "Term 3"
+    },
+    {
+      "studentId": "STU-001",
+      "subject": "Science",
+      "score": 91,
+      "term": "Term 3"
+    },
+    {
+      "studentId": "STU-002",
+      "subject": "Mathematics",
+      "score": 64,
+      "term": "Term 3"
+    }
+  ],
+  "fees": [
+    {
+      "studentId": "STU-001",
+      "total": 45000,
+      "paid": 30000,
+      "term": "Term 3"
+    },
+    {
+      "studentId": "STU-002",
+      "total": 45000,
+      "paid": 45000,
+      "term": "Term 3"
+    },
+    {
+      "studentId": "STU-003",
+      "total": 45000,
+      "paid": 12000,
+      "term": "Term 3"
+    }
+  ],
+  "timetable": [
+    {
+      "day": "Monday",
+      "period": "08:00",
+      "subject": "Mathematics",
+      "className": "Grade 7 East"
+    },
+    {
+      "day": "Monday",
+      "period": "09:00",
+      "subject": "English",
+      "className": "Grade 7 East"
+    },
+    {
+      "day": "Tuesday",
+      "period": "08:00",
+      "subject": "Science",
+      "className": "Grade 7 East"
+    },
+    {
+      "day": "Wednesday",
+      "period": "10:00",
+      "subject": "Kiswahili",
+      "className": "Grade 7 East"
+    }
+  ]
+}
