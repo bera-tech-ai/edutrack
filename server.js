@@ -29,7 +29,26 @@ const checkPassword = (password, stored) => {
     const candidate = crypto.scryptSync(String(password), salt, 32).toString('hex');
     return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(candidate));
 };
-const sessions = new Map(); // token -> userId
+// Stateless sessions: the cookie itself carries an HMAC-signed payload
+// (user id + role + expiry), so logins survive BeraHost running more
+// than one app instance — a server-side session map does not.
+const SESSION_SECRET = process.env.EDU_SESSION_SECRET || 'edutrack-demo-secret-change-me'
+const signSession = user => {
+    const payload = Buffer.from(JSON.stringify({ id: user.id, role: user.role, exp: Date.now() + 1000 * 60 * 60 * 8 })).toString('base64url')
+    const sig = crypto.createHmac('sha256', SESSION_SECRET).update(payload).digest('base64url')
+    return `${payload}.${sig}`
+}
+const readSession = token => {
+    try {
+        const [payload, sig] = String(token || '').split('.')
+        if (!payload || !sig) return null
+        const expected = crypto.createHmac('sha256', SESSION_SECRET).update(payload).digest('base64url')
+        if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null
+        const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'))
+        if (!data.exp || data.exp < Date.now()) return null
+        return data
+    } catch { return null }
+}
 
 // ── Seed data ───────────────────────────────────────────────────────────────
 const seed = () => ({
@@ -97,9 +116,9 @@ let db = loadDb();
 // ── Auth helpers ────────────────────────────────────────────────────────────
 const parseCookies = req => Object.fromEntries(String(req.headers.cookie || '').split(';').map(p => p.trim().split('=')).filter(p => p[0]));
 const currentUser = req => {
-    const token = parseCookies(req).edutrack_session;
-    if (!token || !sessions.has(token)) return null;
-    return db.users.find(u => u.id === sessions.get(token)) || null;
+    const session = readSession(parseCookies(req).edutrack_session);
+    if (!session) return null;
+    return db.users.find(u => u.id === session.id) || null;
 };
 const requireRole = role => (req, res, next) => {
     const user = currentUser(req);
@@ -131,7 +150,23 @@ label{display:block;margin:10px 0 4px;font-weight:600}.muted{color:var(--muted)}
 form.inline{display:flex;gap:8px;flex-wrap:wrap;align-items:end}
 </style></head><body>
 <header><a href="/">🎓 EduTrack</a><span>School Management System</span></header>
-<main>${body}</main></body></html>`;
+<main>${body}</main>
+<script>
+document.addEventListener('submit', function (e) {
+    var form = e.target;
+    e.preventDefault();
+    var data = {};
+    new FormData(form).forEach(function (v, k) { data[k] = v; });
+    fetch(form.action, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+        .then(function (r) { return r.json().catch(function () { return {}; }); })
+        .then(function (j) {
+            if (j.redirect) { window.location = j.redirect; return; }
+            if (j.ok === false) { alert(j.error || 'Something went wrong'); return; }
+            window.location.reload();
+        })
+        .catch(function () { alert('Network error — please try again.'); });
+});
+</script></body></html>`;
 
 app.get('/', (req, res) => {
     const user = currentUser(req);
@@ -167,16 +202,15 @@ app.get('/login', (req, res) => {
 
 app.post('/login', (req, res) => {
     const user = db.users.find(u => u.email === String(req.body.email || '').toLowerCase());
-    if (!user || !checkPassword(req.body.password || '', user.password)) return res.redirect('/login?error=1');
-    const token = crypto.randomBytes(24).toString('hex');
-    sessions.set(token, user.id);
-    res.setHeader('Set-Cookie', `edutrack_session=${token}; Path=/; HttpOnly; SameSite=Lax`);
-    res.redirect(`/${user.role}`);
+    const wantsJson = req.is('json');
+    if (!user || !checkPassword(req.body.password || '', user.password)) {
+        return wantsJson ? res.status(401).json({ ok: false, error: 'Wrong email or password' }) : res.redirect('/login?error=1');
+    }
+    res.setHeader('Set-Cookie', `edutrack_session=${signSession(user)}; Path=/; HttpOnly; SameSite=Lax`);
+    return wantsJson ? res.json({ ok: true, redirect: `/${user.role}` }) : res.redirect(`/${user.role}`);
 });
 
 app.get('/logout', (req, res) => {
-    const token = parseCookies(req).edutrack_session;
-    if (token) sessions.delete(token);
     res.setHeader('Set-Cookie', 'edutrack_session=; Path=/; Max-Age=0');
     res.redirect('/');
 });
@@ -283,17 +317,17 @@ app.post('/api/students', requireRole('admin'), (req, res) => {
     db.students.push({ id, name: String(req.body.name || '').trim(), className: String(req.body.className || '').trim(), guardian: String(req.body.guardian || '').trim() });
     db.fees.push({ studentId: id, total: 45000, paid: 0, term: 'Term 3' });
     saveDb(db);
-    res.redirect('/admin');
+    return req.is('json') ? res.json({ ok: true, redirect: '/admin' }) : res.redirect('/admin');
 });
 app.post('/api/attendance', requireRole('teacher'), (req, res) => {
     db.attendance.push({ studentId: String(req.body.studentId), date: new Date().toISOString().slice(0, 10), status: String(req.body.status || 'present') });
     saveDb(db);
-    res.redirect('/teacher');
+    return req.is('json') ? res.json({ ok: true, redirect: '/teacher' }) : res.redirect('/teacher');
 });
 app.post('/api/results', requireRole('teacher'), (req, res) => {
     db.results.push({ studentId: String(req.body.studentId), subject: String(req.body.subject || '').trim(), score: Number(req.body.score) || 0, term: 'Term 3' });
     saveDb(db);
-    res.redirect('/teacher');
+    return req.is('json') ? res.json({ ok: true, redirect: '/teacher' }) : res.redirect('/teacher');
 });
 
 app.use((req, res) => res.status(404).send(page('Not found', '<h1>Page not found</h1><p><a href="/">Back to EduTrack home</a></p>')));
